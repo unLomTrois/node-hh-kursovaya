@@ -32,7 +32,7 @@ export namespace API {
 
   export interface Query {
     no_magic?: boolean;
-    area?: number;
+    area?: 113 | number;
     text?: string;
     schedule?: schedule;
     per_page?: number;
@@ -47,6 +47,7 @@ export namespace API {
     order_by?: order_by;
     search_field?: search_field;
     clusters?: boolean;
+    only_with_salary?: boolean;
   }
 
   /// URL
@@ -63,41 +64,226 @@ export namespace API {
 
   /// ALIASES
 
-  /**
-   * @todo расписать точное представление вакансии
-   * @link https://github.com/hhru/api/blob/master/docs/vacancies.md
-   */
+  export interface Response {
+    items: Vacancy[];
+    per_page: number;
+    page: number;
+    pages: number;
+    found: number;
+    clusters: Cluster[];
+    arguments: any | null;
+    alternate_url: string;
+  }
+
+  export interface Vacancy {
+    id: string;
+    premium: boolean;
+    has_test: boolean;
+    response_url: string | null;
+    address: any | null;
+    alternate_url: string;
+    apply_alternate_url: string;
+    department: {
+      id: string;
+      name: string;
+    };
+    salary: {
+      from: number | null;
+      to: number | null;
+      currency: string;
+      gross: boolean;
+    };
+    name: string;
+    insider_interview: {
+      id: string;
+      url: string;
+    };
+    area: {
+      url: string;
+      id: string;
+      name: string;
+    };
+    url: string;
+    published_at: string;
+    relations: any[];
+    employer: {
+      url: string;
+      alternate_url: string;
+      logo_urls: any;
+      name: string;
+      id: string;
+    };
+    response_letter_required: string;
+    type: {
+      id: string;
+      name: string;
+    };
+    archived: string;
+    working_days: any[];
+    working_time_intervals: any[];
+    working_time_modes: any[];
+    accept_temporary: boolean;
+  }
+
+  export interface DriverLicenseType {
+    id: string;
+  }
+
+  export interface KeySkill {
+    name: string;
+  }
+
+  export interface Specialization {
+    id: string;
+    name: string;
+    profarea_id: string;
+    profarea_name: string;
+  }
+
+  export interface FullVacancy {
+    id: string;
+    description: string;
+    branded_description?: string;
+    key_skills: KeySkill[];
+    schedule: {
+      id: string;
+      name: string;
+    };
+    accept_handicapped: boolean;
+    accept_kids: boolean;
+    experience: {
+      id: string;
+      name: string;
+    };
+    address?: any;
+    alternate_url: string;
+    url: string;
+    apply_alternate_url: string;
+    code?: string;
+    department?: {
+      id: string;
+      name: string;
+    };
+    employment?: {
+      id: string;
+      name: string;
+    };
+    salary?: {
+      from?: number;
+      to?: number;
+      gross?: boolean;
+    };
+    archived: boolean;
+    name: string;
+    insider_interview?: any;
+    area: {
+      id: string;
+      name: string;
+      url: string;
+    };
+    created_at: string;
+    published_at: string;
+    employer?: {
+      blacklisted: boolean;
+    };
+    response_letter_required: boolean;
+    type: {
+      id: string;
+      name: string;
+    };
+    has_test: boolean;
+    response_url: string;
+    test?: {
+      required: boolean;
+    };
+    specialization: Specialization[];
+    contacts?: any;
+    billing_type: {
+      id: string;
+      name: string;
+    };
+    allow_messages: boolean;
+    premium: boolean;
+    driver_license_types: DriverLicenseType[];
+    accept_incomplete_resumes: boolean;
+    working_days?: {
+      id: string;
+      name: string;
+    };
+    working_time_intervals?: {
+      id: string;
+      name: string;
+    };
+    working_time_modes?: {
+      id: string;
+      name: string;
+    };
+    accept_temporary: boolean;
+  }
+
+  export interface FormattedClusters {
+    metro?: MetroCluster;
+    area: Cluster;
+    salary: Cluster;
+    professional_area: Cluster;
+    industry: Cluster;
+    experience: Cluster;
+    employment: Cluster;
+    schedule: Cluster;
+    label: Cluster;
+  }
+
+  export interface Cluster {
+    name: string;
+    id: string;
+    items: ClusterItem[];
+  }
+
+  export interface ClusterItem {
+    name: string;
+    url: string;
+    count: number;
+    type?: string;
+  }
+
+  export interface MetroCluster extends Cluster {
+    items: MetroClusterItem[];
+  }
+
+  export interface MetroClusterItem extends ClusterItem {
+    type: "metro_line" | "metro_station";
+    metro_line?: {
+      id: string;
+      hex_color: string;
+      area: Area;
+    };
+    metro_station?: {
+      id: string;
+      hex_color: string;
+      area: Area;
+      lat: number;
+      lng: number;
+      order: number;
+    };
+  }
+
+  export interface Area {
+    id: 1;
+    name: string;
+    url: string;
+  }
 
   /**
-   * вакансия
+   * Минимальный элемент парсинга, предоставляет информацию о ссылке и количестве вакансий по ней
    */
-  export type Vacancy = any;
-  export type FullVacancy = any;
-  export type Clusters = any;
+  export interface ParseItem {
+    count: number;
+    url: string;
+    name: string;
+  }
 
   export type PreparedVacancy = any;
   export type PreparedClusters = any;
-
-  /// Analyzer
-
-  export type AnalyzedData = any;
-
-  export type analyzedInfo = any;
-
-  export type SalaryCluster = any[];
-
-  export type ExperienceCluster = any[];
-
-  export type EmploymentCluster = any[];
-
-  export type ScheduleCluster = any[];
-
-  export type IndustryCluster = any[];
-
-  export type SimpleCluster =
-    | EmploymentCluster
-    | ScheduleCluster
-    | IndustryCluster;
 
   // IO
 

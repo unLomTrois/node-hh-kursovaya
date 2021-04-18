@@ -1,63 +1,31 @@
-import fetch from "node-fetch";
-import { queryToString } from "./format.js";
-import { API } from "./types/api/module";
+import { chunk } from "lodash-es";
+import { setTimeout } from "node:timers";
+import { fetchCache } from "./fetch-cache.js";
+import { getVacancies } from "./requests.js";
+import { saveToFile } from "./save.js";
+import { API } from "./types/api/module.js";
 
-const hh_headers = {
-  "User-Agent": "labor-market-analyzer (vadim.kuz02@gmail.com)",
-};
+const short_vacancies = getVacancies("разработчик");
 
-// получить число вакансий по utl
-const getFoundVacanciesNumber = async (raw_url: string): Promise<number> => {
-  // изменить per_page=*число* в url на per_page=0,
-  // чтобы не получать ненужные данные
-  const url = raw_url.replace(/per_page=(\d+)?/, "per_page=0");
+short_vacancies
+  .then((data) => {
+    return data.map((d) => d.url);
+  })
+  .then((urls) => {
+    return urls.map(async (url) => {
+      return await fetchCache(url);
+    });
+  })
+  .then(async (fetches: Promise<any>[]) => {
+    const full_vacancies: API.FullVacancy[] = ([] as API.FullVacancy[]).concat(
+      ...(await Promise.all(fetches)
+        .then((chunk) => {
+          return chunk;
+        })
+        .catch((err) => {
+          return err;
+        }))
+    );
 
-  const data = await fetch(encodeURI(url), {
-    headers: hh_headers,
-  }).then((res) => res.json());
-
-  return data.found;
-};
-
-const getVacancies = async (raw_query: API.Query, limit = 2000) => {
-  const query = queryToString(raw_query);
-
-  const url = "https://api.hh.ru/vacancies?" + query;
-
-  const found: number = await getFoundVacanciesNumber(url);
-
-  // получаем количество элементов на страницу
-  const per_page: number = raw_query.per_page ?? 100;
-
-  // вычисляем количество требуемых страниц
-  const pages: number = Math.ceil((found <= limit ? found : limit) / per_page);
-
-  const urls: string[] = Array.from(
-    Array(pages).fill(url),
-    (url: string, page: number) => url.replace(/&page=(\d+)?/, `&page=${page}`)
-  );
-
-  // сделать серию ассинхронных запросов, получить promise представления json
-  const data: Promise<API.Vacancy>[] = urls.map((url) =>
-    fetch(encodeURI(url), { headers: hh_headers }).then((res) =>
-      res.json()
-    )
-  );
-
-  // дождаться резолва промисов, получить их поля items
-  const vacancies: API.Vacancy[] = [].concat(
-    ...(await Promise.all(data)).map((page) => page.items)
-  );
-
-  return vacancies;
-};
-
-getVacancies({
-  text: "react",
-  per_page: 100,
-  page: 1,
-  order_by: "salary_desc",
-  no_magic: true,
-}).then((data) => {
-  console.log(JSON.stringify(data, undefined, 2));
-});
+    saveToFile(full_vacancies, "./build", "kek.json")
+  });

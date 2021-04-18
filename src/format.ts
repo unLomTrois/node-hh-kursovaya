@@ -11,3 +11,17 @@ export const queryToString = (query: API.Query): string => {
   // объединить эти пары пар знаком '&'
   return query_list.join("&");
 };
+
+const convertArrayToObject = (array: any[], key: string) => {
+  const initialValue = {};
+  return array.reduce((obj, item) => {
+    return {
+      ...obj,
+      [item[key]]: item,
+    };
+  }, initialValue);
+};
+
+export const formatClusters = (
+  clusters: API.Cluster[]
+): API.FormattedClusters => convertArrayToObject(clusters, "id");
