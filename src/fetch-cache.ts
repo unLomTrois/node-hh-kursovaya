@@ -6,9 +6,9 @@ export const fetchCache = async (
   url: string,
   init?: RequestInit
 ): Promise<any> => {
-  const cache_dir_path = "./cache";
+  const cache_dir_path = "./data/cache";
   if (!existsSync(cache_dir_path)) {
-    mkdirSync(cache_dir_path);
+    mkdirSync(cache_dir_path, { recursive: true });
   }
 
   const cache_file_path: string = resolvePathForCache(url, cache_dir_path);

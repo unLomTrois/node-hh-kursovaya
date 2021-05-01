@@ -5,11 +5,12 @@ export const saveToFile = (
   something_to_save: any,
   log_dir_path: string,
   filename_to_log: string,
-  silent_mode: boolean = false
+  space: number = 2,
+  silent_mode: boolean = true
 ): void => {
   // если нет папки для сохранения логов, создать её
   if (!existsSync(log_dir_path)) {
-    mkdirSync(log_dir_path);
+    mkdirSync(log_dir_path, { recursive: true });
   }
 
   // получить путь для сохранения
@@ -18,7 +19,7 @@ export const saveToFile = (
   // сохранить в лог
   writeFile(
     log_path,
-    JSON.stringify(something_to_save, undefined, 2),
+    JSON.stringify(something_to_save, undefined, space),
     (err) => {
       if (err) throw err;
       if (!silent_mode) {

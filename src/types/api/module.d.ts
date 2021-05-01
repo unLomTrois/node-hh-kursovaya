@@ -225,7 +225,7 @@ export namespace API {
     metro?: MetroCluster;
     area: Cluster;
     salary: Cluster;
-    professional_area: Cluster;
+    sub_industry: Cluster;
     industry: Cluster;
     experience: Cluster;
     employment: Cluster;
@@ -239,10 +239,15 @@ export namespace API {
     items: ClusterItem[];
   }
 
-  export interface ClusterItem {
-    name: string;
-    url: string;
+  /**
+   * Минимальный элемент парсинга, предоставляет информацию о ссылке и количестве вакансий по ней
+   */
+   export interface ParseItem {
     count: number;
+    url: string;
+    name: string;
+  }
+  export interface ClusterItem extends ParseItem {
     type?: string;
   }
 
@@ -273,13 +278,14 @@ export namespace API {
     url: string;
   }
 
-  /**
-   * Минимальный элемент парсинга, предоставляет информацию о ссылке и количестве вакансий по ней
-   */
-  export interface ParseItem {
-    count: number;
+  interface SuggestAreaItem {
+    id: string;
+    text: string;
     url: string;
-    name: string;
+  }
+
+  interface SuggestAreasResponse {
+    items: SuggestAreaItem[];
   }
 
   export type PreparedVacancy = any;
@@ -295,10 +301,10 @@ export namespace API {
   }
 
   /// Not used
-  export interface Response {
-    name: string;
-    snippet: Snippet;
-  }
+  // export interface Response {
+  //   name: string;
+  //   snippet: Snippet;
+  // }
 
   export interface Snippet {
     requirement: string | undefined | null;

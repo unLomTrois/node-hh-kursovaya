@@ -1,6 +1,7 @@
 import { partition } from "lodash-es";
 import fetch from "node-fetch";
 import { existsSync, readFileSync } from "node:fs";
+import { analyzeClusters } from "./analyze.js";
 import { fetchCache } from "./fetch-cache.js";
 import { formatClusters, queryToString } from "./format.js";
 import { saveToFile } from "./save.js";
@@ -10,11 +11,7 @@ const hh_headers = {
   "User-Agent": "labor-market-analyzer (vadim.kuz02@gmail.com)",
 };
 
-export const getVacanciesInfo = async (
-  raw_url: string
-): Promise<API.Response> => {
-  const url = raw_url.replace(/per_page=(\d+)?/, "per_page=0");
-
+export const getVacanciesInfo = async (url: string): Promise<API.Response> => {
   const data: API.Response = await fetch(
     url.match(/[_\.!~*'()-]/) && url.match(/%[0-9a-f]{2}/i)
       ? url
@@ -27,123 +24,101 @@ export const getVacanciesInfo = async (
   return data;
 };
 
-const buildQueryURL = (raw_query: API.Query) => {
+export const buildQueryURL = (raw_query: API.Query) => {
   const query = queryToString(raw_query);
 
   return "https://api.hh.ru/vacancies?" + query;
 };
 
-export const getVacancies = async (text: string) => {
-  if (existsSync("kek.json")) {
-    const file: string = readFileSync("./kek.json", { encoding: "utf-8" });
+export const getClusters = (response: API.Response): API.FormattedClusters => {
+  return formatClusters(response.clusters);
+};
 
-    console.log("KEK")
-
-    return JSON.parse(file) as API.Vacancy[];
-  }
-
-  const raw_query: API.Query = {
-    text: text,
-    per_page: 100,
-    page: 1,
-    order_by: "salary_desc",
-    no_magic: true,
-    clusters: true,
-    only_with_salary: false,
-    area: 113,
-    specialization: "1",
-    industry: "7",
-  };
-
-  const url: string = buildQueryURL(raw_query);
-
-  const info: API.Response = await getVacanciesInfo(url);
-
-  const urls: string[] = Array.from(
-    Array(info.pages).fill(url),
-    (url: string, page: number) => url.replace(/&page=(\d+)?/, `&page=${page}`)
-  );
-
-  const response: API.Response = await fetch(
-    encodeURI(
-      buildQueryURL({
-        ...raw_query,
-        per_page: 0,
-      })
-    ),
-    {
-      headers: hh_headers,
-    }
-  ).then((res) => res.json());
-
-  console.log("kek:", response.found);
+export const getVacancies = async (response: API.Response) => {
+  console.log("всего найдено:", response.found);
 
   if (response.found > 2000) {
     const formatted_clusters: API.FormattedClusters = formatClusters(
       response.clusters
     );
 
-    const [small_clusters, big_clusters] = partition(
+    const [small_area_clusters, big_area_clusters] = partition(
       formatted_clusters.area.items,
       (cluster) => cluster.count <= 2000
     );
 
-    const parse_items = await branchVacanciesFromDeepCluster(big_clusters);
+    // analyzeClusters(formatted_clusters);
+    saveToFile(big_area_clusters, "data", "big_area_clusters.json");
+    saveToFile(small_area_clusters, "data", "small_area_clusters.json");
 
-    const [simple_parse_items, paginatable_parse_items] = partition(
-      parse_items
-        .concat(
-          small_clusters.map((item) => ({
-            count: item.count,
-            url: item.url,
-            name: item.name,
-          }))
-        )
-        .sort((a, b) => b.count - a.count),
-      (parse_item) => parse_item.count <= 100
+    // return [big_area_clusters, small_area_clusters];
+    return (
+      // big_area_clusters.map((cl) => cl.count).reduce((acc, cur) => acc + cur) +
+      small_area_clusters
+        .concat(big_area_clusters)
+        .map((cluster) => cluster.count)
+        .reduce((acc, cur) => acc + cur)
     );
 
-    const simple_urls: string[] = simple_parse_items.map((item) =>
-      item.url
-        .replace(/per_page=(\d+)?/, "per_page=100")
-        .replace("clusters=true", "clusters=false")
-    );
+    // const parse_items = await branchVacanciesFromDeepCluster(big_clusters);
 
-    const paginated_urls: string[] = await getPaginatableVacancies(
-      paginatable_parse_items
-    );
+    // const [simple_parse_items, paginatable_parse_items] = partition(
+    //   parse_items
+    //     .concat(
+    //       small_clusters.map((item) => ({
+    //         count: item.count,
+    //         url: item.url,
+    //         name: item.name,
+    //       }))
+    //     )
+    //     .sort((a, b) => b.count - a.count),
+    //   (parse_item) => parse_item.count <= 100
+    // );
 
-    // дождаться резолва промисов, получить их поля items
-    const vacancies: API.Vacancy[] = await getVacanciesFromURLs(
-      simple_urls.concat(paginated_urls)
-    );
+    // const simple_urls: string[] = simple_parse_items.map((item) =>
+    //   item.url
+    //     .replace(/per_page=(\d+)?/, "per_page=100")
+    //     .replace("clusters=true", "clusters=false")
+    // );
 
-    console.log("KEK", vacancies.length);
+    // const paginated_urls: string[] = await getPaginatableVacancies(
+    //   paginatable_parse_items
+    // );
 
-    return vacancies;
+    // // дождаться резолва промисов, получить их поля items
+    // const vacancies: API.Vacancy[] = await getVacanciesFromURLs(
+    //   simple_urls.concat(paginated_urls)
+    // );
+
+    // console.log("в итоге спаршено", vacancies.length);
+
+    // return vacancies;
   }
 
   return [] as API.Vacancy[];
 };
 
-const paginateLink = (link: string, pages: number): string[] => {
+export const paginateLink = (link: string, pages: number): string[] => {
   const url = new URL(link);
 
   url.searchParams.set("page", "1");
 
+  const prepared_url = url
+    .toString()
+    .replace("clusters=true", "clusters=false")
+    .replace(/per_page=(\d+)?/, "per_page=100");
+
   const urls: string[] = Array.from(
-    Array(pages).fill(url.toString()),
-    (url: string, page: number) =>
-      url
-        .replace("clusters=true", "clusters=false")
-        .replace(/per_page=(\d+)?/, "per_page=100")
-        .replace(/&page=(\d+)?/, `&page=${page}`)
+    Array(pages).fill(prepared_url),
+    (url: string, page: number) => url.replace(/&page=(\d+)?/, `&page=${page}`)
   );
 
   return urls;
 };
 
-const getPaginatableVacancies = async (parse_items: API.ParseItem[]) => {
+const getPaginatableVacancies = async (
+  parse_items: API.ParseItem[]
+): Promise<string[]> => {
   const urls = parse_items.map(async (item) => {
     const url: string = item.url;
     const found: number = (await getVacanciesInfo(url)).found;
@@ -178,7 +153,12 @@ export const branchVacanciesFromDeepCluster = async (
       const urls: any[] = [];
       if (formatted_clusters.metro !== undefined) {
         formatted_clusters.metro.items.forEach((item) => {
-          urls.push({ count: item.count, url: item.url, name: item.name });
+
+          urls.push({
+            count: item.count,
+            url: item.url,
+            name: item.metro_line?.area.name + " " + item.name,
+          });
         });
       }
       return urls;
@@ -204,7 +184,7 @@ export const getVacanciesFromURLs = async (urls: string[]) => {
   return vacancies;
 };
 
-export const getFullVacancies = async (
+export const getFullVacanciesFromURLs = async (
   urls: string[]
 ): Promise<API.FullVacancy[]> => {
   const data: Promise<API.FullVacancy>[] = urls.map((url) =>
