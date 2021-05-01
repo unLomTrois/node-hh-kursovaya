@@ -4,15 +4,15 @@ import {
   branchVacanciesFromDeepCluster,
   getFullVacancies,
   getVacancies,
-  getVacanciesInfo,
+  getVacanciesInfo
 } from "./requests.js";
 import { saveToFile } from "./save.js";
-import Suggest from "./suggest.js";
+import { getArea } from "./suggest.js";
 import { API } from "./types/api/module.js";
 import { paginateClusters } from "./utils.js";
 
 (async (text: string) => {
-  const area = await Suggest.area("Россия");
+  const area = await getArea("Россия");
 
   const raw_query: API.Query = {
     text: text,

@@ -3,67 +3,55 @@ import fetch from "node-fetch";
 import { URL } from "url";
 import { API } from "./types/api/module";
 
+const silent_mode = false;
+
 /**
- * Suggest-модуль
- *
- * Делает вспомогательные запросы
+ * делает запрос и получает индекс территории
+ * @param text - название территории, например: "Россия", "Москва"
+ * @param language - локализация запроса, дефолт: "RU"
  */
-namespace Suggest {
-  const silent_mode = false;
-
-  /**
-   * делает запрос и получает индекс территории
-   * @param text - название территории, например: "Россия", "Москва"
-   * @param language - локализация запроса, дефолт: "RU"
-   */
-  export const area = async (
-    text: string,
-    language = "RU"
-  ): Promise<number> => {
-    // проверка что text является числом
-    if (!isNaN(Number(text))) {
-      const id = Number(text);
-      // валидация
-      if (!(await isValidID(id))) {
-        throw new Error("указан невалидный код территории");
-      }
-
-      return id;
+export const getArea = async (text: string, language = "RU"): Promise<number> => {
+  // проверка что text является числом
+  if (!isNaN(Number(text))) {
+    const id = Number(text);
+    // валидация
+    if (!(await isValidID(id))) {
+      throw new Error("указан невалидный код территории");
     }
 
-    const url = `https://api.hh.ru/suggests/areas?text=${text}&locale=${language}`;
+    return id;
+  }
 
-    const data: API.SuggestAreasResponse = await fetch(
-      new URL(url)
-    ).then((res) => res.json());
+  const url = `https://api.hh.ru/suggests/areas?text=${text}&locale=${language}`;
 
-    const area = data.items[0];
+  const data: API.SuggestAreasResponse = await fetch(new URL(url)).then((res) =>
+    res.json()
+  );
 
-    if (!silent_mode) {
-      console.log(
-        chalk.yellow("территория поиска вакансий:"),
-        chalk.green(area.text)
-      );
-    }
+  const area = data.items[0];
 
-    return Number(area.id);
-  };
+  if (!silent_mode) {
+    console.log(
+      chalk.yellow("территория поиска вакансий:"),
+      chalk.green(area.text)
+    );
+  }
 
-  const isValidID = async (id: number): Promise<boolean> => {
-    const url = `https://api.hh.ru/areas/${id}`;
+  return Number(area.id);
+};
 
-    const data: any = await fetch(new URL(url)).then((res) => res.json());
+const isValidID = async (id: number): Promise<boolean> => {
+  const url = `https://api.hh.ru/areas/${id}`;
 
-    if (!silent_mode) {
-      console.log(
-        chalk.yellow("территория поиска вакансий:"),
-        chalk.green(data.name)
-      );
-    }
+  const data: any = await fetch(new URL(url)).then((res) => res.json());
 
-    // проверка на отсутствие поля "errors"
-    return data.errors === undefined;
-  };
-}
+  if (!silent_mode) {
+    console.log(
+      chalk.yellow("территория поиска вакансий:"),
+      chalk.green(data.name)
+    );
+  }
 
-export default Suggest;
+  // проверка на отсутствие поля "errors"
+  return data.errors === undefined;
+};
