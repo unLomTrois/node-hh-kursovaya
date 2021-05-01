@@ -22,6 +22,12 @@ const convertArrayToObject = (array: any[], key: string) => {
   }, initialValue);
 };
 
+export const buildQueryURL = (raw_query: API.Query) => {
+  const query = queryToString(raw_query);
+
+  return "https://api.hh.ru/vacancies?" + query;
+};
+
 export const formatClusters = (
   clusters: API.Cluster[]
 ): API.FormattedClusters => convertArrayToObject(clusters, "id");

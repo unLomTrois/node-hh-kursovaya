@@ -1,28 +1,15 @@
 import { partition } from "lodash-es";
-import { setTimeout } from "node:timers";
-import { analyzeClusters } from "./analyze.js";
+import { buildQueryURL, formatClusters } from "./format.js";
 import {
-  getVacanciesInfo,
-  buildQueryURL,
-  getClusters,
-  paginateLink,
   branchVacanciesFromDeepCluster,
   getFullVacancies,
   getVacancies,
+  getVacanciesInfo,
 } from "./requests.js";
 import { saveToFile } from "./save.js";
-import { API } from "./types/api/module.js";
-import { promisify } from "util";
-
 import Suggest from "./suggest.js";
-
-const sleep = promisify(setTimeout);
-
-const paginateSmallCluster = (parse_item: API.ParseItem): string[] => {
-  const pages: number = Math.ceil(parse_item.count / 100);
-
-  return paginateLink(parse_item.url, pages);
-};
+import { API } from "./types/api/module.js";
+import { paginateClusters } from "./utils.js";
 
 (async (text: string) => {
   const area = await Suggest.area("Россия");
@@ -51,7 +38,7 @@ const paginateSmallCluster = (parse_item: API.ParseItem): string[] => {
 
   console.log("парсинг кластеров");
 
-  const clusters: API.FormattedClusters = getClusters(response);
+  const clusters: API.FormattedClusters = formatClusters(response.clusters);
 
   // console.log("анализ кластеров", response.found);
   // analyzeClusters(clusters);
@@ -61,20 +48,16 @@ const paginateSmallCluster = (parse_item: API.ParseItem): string[] => {
     (cluster) => cluster.count <= 2000
   );
 
-  saveToFile(big_area_clusters, "data", "big_area_clusters.json");
-  saveToFile(small_area_clusters, "data", "small_area_clusters.json");
-
   const branched_big_cluster = await branchVacanciesFromDeepCluster(
     big_area_clusters
   );
-  saveToFile(branched_big_cluster, "data", "branched_big_cluster.json");
 
-  const paginated_urls_from_big_clusters = branched_big_cluster.flatMap(
-    (cluster) => paginateSmallCluster(cluster)
+  const paginated_urls_from_big_clusters = paginateClusters(
+    branched_big_cluster
   );
 
-  const paginated_urls_from_small_clusters = small_area_clusters.flatMap(
-    (cluster) => paginateSmallCluster(cluster)
+  const paginated_urls_from_small_clusters = paginateClusters(
+    small_area_clusters
   );
 
   console.log("парсинг сокращённых вакансий");

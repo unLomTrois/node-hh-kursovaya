@@ -1,10 +1,7 @@
-import { chunk, partition } from "lodash-es";
+import { chunk } from "lodash-es";
 import fetch from "node-fetch";
-import { existsSync, readFileSync } from "node:fs";
-import { analyzeClusters } from "./analyze.js";
 import { fetchCache } from "./fetch-cache.js";
-import { formatClusters, queryToString } from "./format.js";
-import { saveToFile } from "./save.js";
+import { formatClusters } from "./format.js";
 import { API } from "./types/api/module";
 
 const hh_headers = {
@@ -22,16 +19,6 @@ export const getVacanciesInfo = async (url: string): Promise<API.Response> => {
   ).then((res) => res.json());
 
   return data;
-};
-
-export const buildQueryURL = (raw_query: API.Query) => {
-  const query = queryToString(raw_query);
-
-  return "https://api.hh.ru/vacancies?" + query;
-};
-
-export const getClusters = (response: API.Response): API.FormattedClusters => {
-  return formatClusters(response.clusters);
 };
 
 export const getVacancies = async (urls: string[]) => {
@@ -68,37 +55,6 @@ export const getFullVacancies = async (
     // }
   }
   return full_vacancies;
-};
-
-export const paginateLink = (link: string, pages: number): string[] => {
-  const url = new URL(link);
-
-  url.searchParams.set("page", "1");
-
-  const prepared_url = url
-    .toString()
-    .replace("clusters=true", "clusters=false")
-    .replace(/per_page=(\d+)?/, "per_page=100");
-
-  const urls: string[] = Array.from(
-    Array(pages).fill(prepared_url),
-    (url: string, page: number) => url.replace(/&page=(\d+)?/, `&page=${page}`)
-  );
-
-  return urls;
-};
-
-const getPaginatableVacancies = async (
-  parse_items: API.ParseItem[]
-): Promise<string[]> => {
-  const urls = parse_items.map(async (item) => {
-    const url: string = item.url;
-    const found: number = (await getVacanciesInfo(url)).found;
-    const pages: number = Math.ceil(found / 100);
-    return paginateLink(url, pages);
-  });
-
-  return ([] as string[]).concat(...(await Promise.all(urls)));
 };
 
 /**
@@ -139,7 +95,9 @@ export const branchVacanciesFromDeepCluster = async (
   return parse_items;
 };
 
-export const getVacanciesFromURLs = async (urls: string[]) => {
+export const getVacanciesFromURLs = async (
+  urls: string[]
+): Promise<API.Vacancy[]> => {
   const data: Promise<API.Response>[] = urls.map((url) =>
     fetch(url, {
       headers: hh_headers,
@@ -152,6 +110,7 @@ export const getVacanciesFromURLs = async (urls: string[]) => {
       return page.items;
     })
   );
+
   return vacancies;
 };
 
