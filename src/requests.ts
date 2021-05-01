@@ -1,4 +1,4 @@
-import { partition } from "lodash-es";
+import { chunk, partition } from "lodash-es";
 import fetch from "node-fetch";
 import { existsSync, readFileSync } from "node:fs";
 import { analyzeClusters } from "./analyze.js";
@@ -34,68 +34,40 @@ export const getClusters = (response: API.Response): API.FormattedClusters => {
   return formatClusters(response.clusters);
 };
 
-export const getVacancies = async (response: API.Response) => {
-  console.log("всего найдено:", response.found);
+export const getVacancies = async (urls: string[]) => {
+  const chunk_size = 50;
+  const chunked_urls = chunk(urls, chunk_size);
 
-  if (response.found > 2000) {
-    const formatted_clusters: API.FormattedClusters = formatClusters(
-      response.clusters
-    );
+  console.log("количество чанков:", chunked_urls.length);
 
-    const [small_area_clusters, big_area_clusters] = partition(
-      formatted_clusters.area.items,
-      (cluster) => cluster.count <= 2000
-    );
+  const vacancies: API.Vacancy[] = [];
 
-    // analyzeClusters(formatted_clusters);
-    saveToFile(big_area_clusters, "data", "big_area_clusters.json");
-    saveToFile(small_area_clusters, "data", "small_area_clusters.json");
-
-    // return [big_area_clusters, small_area_clusters];
-    return (
-      // big_area_clusters.map((cl) => cl.count).reduce((acc, cur) => acc + cur) +
-      small_area_clusters
-        .concat(big_area_clusters)
-        .map((cluster) => cluster.count)
-        .reduce((acc, cur) => acc + cur)
-    );
-
-    // const parse_items = await branchVacanciesFromDeepCluster(big_clusters);
-
-    // const [simple_parse_items, paginatable_parse_items] = partition(
-    //   parse_items
-    //     .concat(
-    //       small_clusters.map((item) => ({
-    //         count: item.count,
-    //         url: item.url,
-    //         name: item.name,
-    //       }))
-    //     )
-    //     .sort((a, b) => b.count - a.count),
-    //   (parse_item) => parse_item.count <= 100
-    // );
-
-    // const simple_urls: string[] = simple_parse_items.map((item) =>
-    //   item.url
-    //     .replace(/per_page=(\d+)?/, "per_page=100")
-    //     .replace("clusters=true", "clusters=false")
-    // );
-
-    // const paginated_urls: string[] = await getPaginatableVacancies(
-    //   paginatable_parse_items
-    // );
-
-    // // дождаться резолва промисов, получить их поля items
-    // const vacancies: API.Vacancy[] = await getVacanciesFromURLs(
-    //   simple_urls.concat(paginated_urls)
-    // );
-
-    // console.log("в итоге спаршено", vacancies.length);
-
-    // return vacancies;
+  for (const chunk of chunked_urls) {
+    vacancies.push(...(await getVacanciesFromURLs(chunk)));
   }
 
-  return [] as API.Vacancy[];
+  return vacancies;
+};
+
+export const getFullVacancies = async (
+  urls: string[]
+): Promise<API.FullVacancy[]> => {
+  const chunked_urls = chunk(urls, 100);
+  const full_vacancies: API.FullVacancy[] = [];
+
+  console.log("количество чанков:", chunked_urls.length);
+
+  let i = 0;
+  for (const chunk of chunked_urls) {
+    console.log(i);
+    full_vacancies.push(...(await getFullVacanciesFromURLs(chunk)));
+    i++;
+
+    // if (i % 5 == 0) {
+    //   await sleep(1000);
+    // }
+  }
+  return full_vacancies;
 };
 
 export const paginateLink = (link: string, pages: number): string[] => {
@@ -153,7 +125,6 @@ export const branchVacanciesFromDeepCluster = async (
       const urls: any[] = [];
       if (formatted_clusters.metro !== undefined) {
         formatted_clusters.metro.items.forEach((item) => {
-
           urls.push({
             count: item.count,
             url: item.url,
