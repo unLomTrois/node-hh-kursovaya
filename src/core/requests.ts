@@ -2,7 +2,7 @@ import { chunk } from "lodash-es";
 import fetch from "node-fetch";
 import { fetchCache } from "./fetch-cache.js";
 import { formatClusters } from "./format.js";
-import { API } from "./types/api/module";
+import { API } from "../types/api/module";
 
 const hh_headers = {
   "User-Agent": "labor-market-analyzer (vadim.kuz02@gmail.com)",

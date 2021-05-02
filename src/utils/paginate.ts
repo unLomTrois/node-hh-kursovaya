@@ -1,8 +1,4 @@
-import { setTimeout } from "node:timers";
-import { promisify } from "util";
-import { API } from "./types/api/module";
-
-export const sleep = promisify(setTimeout);
+import { API } from "../types/api/module";
 
 export const paginateLink = (link: string, pages: number): string[] => {
   const url = new URL(link);

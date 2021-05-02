@@ -1,5 +1,5 @@
-import { saveToFile } from "./save.js";
-import { API } from "./types/api/module";
+import { saveToFile } from "../utils/save.js";
+import { API } from "../types/api/module";
 
 export const analyzeClusters = (clusters: API.FormattedClusters) => {
   saveToFile(clusters.area, "./data/clusters", "area.json");

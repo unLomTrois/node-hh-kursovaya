@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import fetch from "node-fetch";
 import { URL } from "url";
-import { API } from "./types/api/module";
+import { API } from "../types/api/module";
 
 const silent_mode = false;
 

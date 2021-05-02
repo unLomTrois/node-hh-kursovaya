@@ -1,15 +1,15 @@
 import { partition } from "lodash-es";
-import { buildQueryURL, formatClusters } from "./format.js";
+import { buildQueryURL, formatClusters } from "./core/format.js";
 import {
   branchVacanciesFromDeepCluster,
   getFullVacancies,
   getVacancies,
   getVacanciesInfo
-} from "./requests.js";
-import { saveToFile } from "./save.js";
-import { getArea } from "./suggest.js";
+} from "./core/requests.js";
+import { saveToFile } from "./utils/save.js";
+import { getArea } from "./utils/suggest.js";
 import { API } from "./types/api/module.js";
-import { paginateClusters } from "./utils.js";
+import { paginateClusters } from "./utils";
 
 (async (text: string) => {
   const area = await getArea("Россия");

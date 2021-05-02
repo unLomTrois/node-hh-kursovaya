@@ -1,4 +1,4 @@
-import { API } from "./types/api/module";
+import { API } from "../types/api/module";
 
 export const queryToString = (query: API.Query): string => {
   const query_list: string[] = [];

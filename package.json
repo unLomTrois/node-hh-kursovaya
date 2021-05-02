@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -b tsconfig.json",
-    "start": "node build/index.js"
+    "start": "node --experimental-specifier-resolution=node build/index.js"
   },
   "keywords": [
     "headhunter",
