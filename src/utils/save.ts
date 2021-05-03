@@ -1,5 +1,18 @@
-import { existsSync, mkdirSync, writeFile } from "fs";
+import { existsSync, mkdirSync, readFileSync, writeFile } from "fs";
 import { resolve } from "path";
+import { API } from "../types/api/module";
+
+export const getFromLog = (
+  log_dir_path: string,
+  log_file_name: string
+): any => {
+  const path = resolve(process.cwd(), log_dir_path, log_file_name);
+
+  // short_vacancies
+  const data = JSON.parse(readFileSync(path, { encoding: "utf-8" }));
+
+  return data;
+};
 
 export const saveToFile = (
   something_to_save: any,

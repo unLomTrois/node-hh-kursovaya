@@ -1,8 +1,9 @@
-import { chunk } from "lodash-es";
+import { chunk, partition } from "lodash-es";
 import fetch from "node-fetch";
 import { fetchCache } from "./fetch-cache.js";
 import { formatClusters } from "./format.js";
 import { API } from "../types/api/module";
+import { paginateClusters } from "../utils";
 
 const hh_headers = {
   "User-Agent": "labor-market-analyzer (vadim.kuz02@gmail.com)",
@@ -56,6 +57,31 @@ export const getFullVacancies = async (
   }
   return full_vacancies;
 };
+
+export const getURLsFromClusters = async (clusters: API.FormattedClusters) => {
+  const [small_area_clusters, big_area_clusters] = partition(
+    clusters.area.items,
+    (cluster) => cluster.count <= 2000
+  );
+
+  const branched_big_cluster = await branchVacanciesFromDeepCluster(
+    big_area_clusters
+  );
+
+  const paginated_urls_from_big_clusters = paginateClusters(
+    branched_big_cluster
+  );
+
+  const paginated_urls_from_small_clusters = paginateClusters(
+    small_area_clusters
+  );
+
+  return [
+    ...paginated_urls_from_big_clusters,
+    ...paginated_urls_from_small_clusters,
+  ];
+};
+
 
 /**
  * для разделения (ветвления) крупных кластеров на более чем 2000 элементов на

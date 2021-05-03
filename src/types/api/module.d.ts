@@ -221,6 +221,25 @@ export namespace API {
     accept_temporary: boolean;
   }
 
+  export interface PreparedVacancy {
+    id: string;
+    key_skills: KeySkill[];
+    salary?: {
+      from?: number;
+      to?: number;
+      gross?: boolean;
+    };
+    response_letter_required: boolean;
+    has_test: boolean;
+    test?: {
+      required: boolean;
+    };
+    contacts?: any;
+    allow_messages: boolean;
+    accept_incomplete_resumes: boolean;
+    accept_temporary: boolean;
+  }
+
   export interface FormattedClusters {
     metro?: MetroCluster;
     area: Cluster;
@@ -288,7 +307,6 @@ export namespace API {
     items: SuggestAreaItem[];
   }
 
-  export type PreparedVacancy = any;
   export type PreparedClusters = any;
 
   // IO

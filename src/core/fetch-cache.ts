@@ -17,6 +17,15 @@ export const fetchCache = async (
     // read from cache
     const data: any = getFromCache(cache_file_path);
 
+    if (data === undefined) {
+      const data: any = await fetch(url, init).then((res) => res.json());
+
+      // add data to cache
+      addToCache(cache_file_path, data);
+
+      return data;
+    }
+
     return data;
   } else {
     // make new fetch and get json

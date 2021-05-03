@@ -9,6 +9,10 @@ export const getFromCache = (path: string): any => {
 
   const file: string = readFileSync(path, { encoding: "utf-8" });
 
+  if (file == "") {
+    return undefined;
+  }
+
   return JSON.parse(file);
 };
 
