@@ -12,13 +12,11 @@ export const search = async (query: API.Query) => {
   const query_url = buildQueryURL({
     ...query,
     per_page: 0,
-  })
+  });
 
-  console.log(query_url)
-  
-  const response: API.Response = await getVacanciesInfo(
-    query_url
-  );
+  // console.log(query_url);
+
+  const response: API.Response = await getVacanciesInfo(query_url);
 
   const clusters: API.FormattedClusters = formatClusters(response.clusters);
   saveToFile(clusters, "data", "clusters.json");
@@ -28,20 +26,29 @@ export const search = async (query: API.Query) => {
   const urls = await getURLsFromClusters(clusters);
   const vacancies: API.Vacancy[] = await getVacancies(urls);
 
-  console.log(vacancies.length)
+  console.log(vacancies.length);
   saveToFile(vacancies, "data", "vacancies.json");
 };
 
 export const getFull = async (vacancies: API.Vacancy[]) => {
   console.log("парсинг полных вакансий");
 
-  const full_vacancies_urls = vacancies.map((vacancy) => vacancy.url);
+  const full_vacancies_urls = vacancies
+    .filter((vacancy) => vacancy?.url != undefined)
+    .map((vacancy) => {
+      try {
+        return vacancy.url;
+      } catch (error) {
+        console.log(vacancy);
+      }
+      return vacancy.url;
+    });
 
   const full_vacancies = await getFullVacancies(full_vacancies_urls);
 
-  saveToFile(full_vacancies, "data", "full_vacancies.json");
-
   console.log("спаршенно полных вакансий:", full_vacancies.length);
+
+  prepare(full_vacancies);
 };
 
 export const prepare = async (full_vacancies: API.FullVacancy[]) => {
@@ -64,8 +71,4 @@ export const prepare = async (full_vacancies: API.FullVacancy[]) => {
   );
 
   saveToFile(prepared_vacancies, "data", "prepared_vacancies.json");
-
-  console.log(prepared_vacancies.length)
-
 };
-
