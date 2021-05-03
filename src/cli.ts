@@ -39,10 +39,10 @@ cli
       per_page: 100,
       page: 1,
       // order_by: "salary_desc",
-      no_magic: false,
+      // no_magic: false,
       clusters: true,
       // only_with_salary: false,
-      specialization: "1",
+      // specialization: "1",
       // industry: "7",
     };
 
