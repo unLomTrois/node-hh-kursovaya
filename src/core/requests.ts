@@ -30,8 +30,11 @@ export const getVacancies = async (urls: string[]) => {
 
   const vacancies: API.Vacancy[] = [];
 
+  let i = 0;
   for (const chunk of chunked_urls) {
+    console.log(i);
     vacancies.push(...(await getVacanciesFromURLs(chunk)));
+    i++;
   }
 
   return vacancies;
@@ -81,7 +84,6 @@ export const getURLsFromClusters = async (clusters: API.FormattedClusters) => {
     ...paginated_urls_from_small_clusters,
   ];
 };
-
 
 /**
  * для разделения (ветвления) крупных кластеров на более чем 2000 элементов на
