@@ -64,24 +64,18 @@ cli
   .description("получает полное представление вакансий")
   .action(() => {
     const vacancies: API.Vacancy[] = getFromLog("data", "vacancies.json");
-    
-    getFull(vacancies);
-  });
 
-cli
-  .command("prepare")
-  .description("подготовить полные вакансии, очистить их от ненужных полей")
-  .action(() => {
-    const full_vacancies: API.FullVacancy[] = getFromLog("data", "full_vacancies.json");
-    
-    prepare(full_vacancies);
+    getFull(vacancies);
   });
 
 cli
   .command("analyze")
   .description("проанализировать полученные данные")
   .action(() => {
-    const prepared_vacancies: API.FullVacancy[] = getFromLog("data", "prepared_vacancies.json");
+    const prepared_vacancies: API.FullVacancy[] = getFromLog(
+      "data",
+      "prepared_vacancies.json"
+    );
     const clusters: API.FormattedClusters = getFromLog("data", "clusters.json");
 
     analyze(prepared_vacancies, clusters);
