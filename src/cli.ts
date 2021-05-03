@@ -53,9 +53,6 @@ cli
         console.log(ctx.yellow("\n>"), "yarn cli get-full");
         execSync("yarn cli get-full", { stdio: "inherit" });
 
-        console.log(ctx.yellow("\n>"), "yarn cli prepare");
-        execSync("yarn cli prepare", { stdio: "inherit" });
-
         console.log(ctx.yellow("\n>"), "yarn cli analyze");
         execSync("yarn cli analyze", { stdio: "inherit" });
       }, 1000);
