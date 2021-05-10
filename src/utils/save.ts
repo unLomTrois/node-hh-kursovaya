@@ -1,6 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFile } from "fs";
 import { resolve } from "path";
-import { API } from "../types/api/module";
 
 export const getFromLog = (
   log_dir_path: string,
