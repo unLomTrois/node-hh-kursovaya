@@ -2,8 +2,7 @@ import { Spinner } from "cli-spinner";
 import { chunk, partition } from "lodash-es";
 import fetch from "node-fetch";
 import { API } from "../types/api/module";
-import { formatClusters, paginateClusters } from "../utils";
-import { fetchCache } from "../fetch-cache/index.js";
+import { fetchCache, formatClusters, paginateClusters } from "../utils";
 
 const hh_headers = {
   "User-Agent": "labor-market-analyzer (vadim.kuz02@gmail.com)",
