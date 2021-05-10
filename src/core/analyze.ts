@@ -47,6 +47,8 @@ export const analyze = (
   };
 
   saveToFile(analyzed_data, "data", "analyzed_data.json");
+
+  return analyzed_data;
 };
 
 const analyzeSimpleCluster = (simple_cluster: API.Cluster, found: number) => {

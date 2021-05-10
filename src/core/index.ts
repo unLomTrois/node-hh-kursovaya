@@ -11,9 +11,8 @@ export const search = async (query: API.Query) => {
   const query_url = buildQueryURL({
     ...query,
     per_page: 0,
+    page: 0,
   });
-
-  // console.log(query_url);
 
   const response: API.Response = await getVacanciesInfo(query_url);
   console.log("всего по данному запросу найдено:", response.found, "вакансий");
@@ -33,6 +32,8 @@ export const search = async (query: API.Query) => {
 
   console.log(vacancies.length);
   saveToFile(vacancies, "data", "vacancies.json");
+
+  return vacancies;
 };
 
 export const getFull = async (vacancies: API.Vacancy[]) => {
@@ -53,10 +54,10 @@ export const getFull = async (vacancies: API.Vacancy[]) => {
 
   console.log("спаршенно полных вакансий:", full_vacancies.length);
 
-  prepare(full_vacancies);
+  return full_vacancies;
 };
 
-const prepare = async (full_vacancies: API.FullVacancy[]) => {
+export const prepare = async (full_vacancies: API.FullVacancy[]) => {
   // нам важны поля key_skills
   const prepared_vacancies: API.PreparedVacancy[] = full_vacancies.map(
     (vac: API.FullVacancy) => {
@@ -76,4 +77,6 @@ const prepare = async (full_vacancies: API.FullVacancy[]) => {
   );
 
   saveToFile(prepared_vacancies, "data", "prepared_vacancies.json");
+
+  return prepared_vacancies;
 };
