@@ -57,7 +57,7 @@ export const getFull = async (vacancies: API.Vacancy[]) => {
   prepare(full_vacancies);
 };
 
-export const prepare = async (full_vacancies: API.FullVacancy[]) => {
+const prepare = async (full_vacancies: API.FullVacancy[]) => {
   // нам важны поля key_skills
   const prepared_vacancies: API.PreparedVacancy[] = full_vacancies.map(
     (vac: API.FullVacancy) => {

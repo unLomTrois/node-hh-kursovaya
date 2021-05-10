@@ -3,7 +3,7 @@ import { execSync } from "child_process";
 import chalk from "chalk";
 import { getArea, getFromLog } from "./utils";
 import { API } from "./types/api/module";
-import { getFull, prepare, search } from "./core/io.js";
+import { getFull, search } from "./core/index.js";
 import { analyze } from "./core/analyze";
 
 const getCLI = () => {
