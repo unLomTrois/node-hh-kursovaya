@@ -1,6 +1,5 @@
 import { API } from "../types/api/module.js";
-import { getFromLog, saveToFile } from "../utils/save.js";
-import { buildQueryURL, formatClusters } from "./format.js";
+import { buildQueryURL, formatClusters, saveToFile } from "../utils";
 import {
   getFullVacancies,
   getURLsFromClusters,

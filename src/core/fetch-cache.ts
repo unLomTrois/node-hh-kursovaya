@@ -1,5 +1,5 @@
-import fetch, { RequestInit } from "node-fetch";
 import { existsSync, mkdirSync } from "fs";
+import fetch, { RequestInit } from "node-fetch";
 import { addToCache, getFromCache, resolvePathForCache } from "./cache.js";
 
 export const fetchCache = async (

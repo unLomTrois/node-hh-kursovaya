@@ -1,6 +1,16 @@
 import { API } from "../types/api/module";
 
-export const queryToString = (query: API.Query): string => {
+export const buildQueryURL = (raw_query: API.Query) => {
+  const query = queryToString(raw_query);
+
+  return "https://api.hh.ru/vacancies?" + query;
+};
+
+export const formatClusters = (
+  clusters: API.Cluster[]
+): API.FormattedClusters => convertArrayToObject(clusters, "id");
+
+const queryToString = (query: API.Query): string => {
   const query_list: string[] = [];
 
   // объединить пары ключей и значений интерфейса знаком '='
@@ -21,13 +31,3 @@ const convertArrayToObject = (array: any[], key: string) => {
     };
   }, initialValue);
 };
-
-export const buildQueryURL = (raw_query: API.Query) => {
-  const query = queryToString(raw_query);
-
-  return "https://api.hh.ru/vacancies?" + query;
-};
-
-export const formatClusters = (
-  clusters: API.Cluster[]
-): API.FormattedClusters => convertArrayToObject(clusters, "id");

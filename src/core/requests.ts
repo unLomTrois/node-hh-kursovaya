@@ -1,14 +1,9 @@
+import { Spinner } from "cli-spinner";
 import { chunk, partition } from "lodash-es";
 import fetch from "node-fetch";
-import { fetchCache } from "./fetch-cache.js";
-import { formatClusters } from "./format.js";
 import { API } from "../types/api/module";
-import { paginateClusters } from "../utils";
-
-const sleep = promisify(setTimeout);
-
-import { Spinner } from "cli-spinner";
-import { promisify } from "node:util";
+import { formatClusters, paginateClusters } from "../utils";
+import { fetchCache } from "./fetch-cache.js";
 
 const hh_headers = {
   "User-Agent": "labor-market-analyzer (vadim.kuz02@gmail.com)",

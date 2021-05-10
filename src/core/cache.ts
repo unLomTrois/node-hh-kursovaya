@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFile } from "fs";
 import { resolve } from "path";
-import { md5 } from "../utils/hash.js";
+import { md5 } from "../utils";
 
 export const getFromCache = (path: string): any => {
   if (!existsSync(path)) {
