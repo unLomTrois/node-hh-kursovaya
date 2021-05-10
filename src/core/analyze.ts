@@ -178,6 +178,12 @@ const rateKeySkills = (prepared_vacancies: API.PreparedVacancy[]) => {
     result[skill] = (result[skill] || 0) + 1;
   });
 
+  console.log(
+    prepared_vacancies.length,
+    key_skills.length,
+    key_skills.length / prepared_vacancies.length
+  );
+
   // return result
 
   // const unique_key_skills = Array.from(new Set(key_skills));

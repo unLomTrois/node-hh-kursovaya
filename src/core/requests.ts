@@ -5,6 +5,11 @@ import { formatClusters } from "./format.js";
 import { API } from "../types/api/module";
 import { paginateClusters } from "../utils";
 
+const sleep = promisify(setTimeout);
+
+import { Spinner } from "cli-spinner";
+import { promisify } from "node:util";
+
 const hh_headers = {
   "User-Agent": "labor-market-analyzer (vadim.kuz02@gmail.com)",
 };
@@ -27,15 +32,22 @@ export const getVacancies = async (urls: string[]) => {
   const chunked_urls = chunk(urls, chunk_size);
 
   console.log("количество чанков:", chunked_urls.length);
+  console.log("размер чанка:", chunk_size);
 
   const vacancies: API.Vacancy[] = [];
 
-  let i = 0;
+  const spinner = new Spinner("подготовка... %s");
+  spinner.setSpinnerString("|/-\\");
+  spinner.start();
+
+  let i = 1;
   for (const chunk of chunked_urls) {
-    console.log(i);
+    spinner.setSpinnerTitle(`${i}/${chunked_urls.length} %s`);
     vacancies.push(...(await getVacanciesFromURLs(chunk)));
     i++;
   }
+  console.log("");
+  spinner.stop();
 
   return vacancies;
 };
@@ -48,16 +60,14 @@ export const getFullVacancies = async (
 
   console.log("количество чанков:", chunked_urls.length);
 
-  let i = 0;
+  let i = 1;
   for (const chunk of chunked_urls) {
-    console.log(i);
-    full_vacancies.push(...(await getFullVacanciesFromURLs(chunk)));
+    process.stdout.write(`${i}/${chunked_urls.length}\r`);
     i++;
-
-    // if (i % 5 == 0) {
-    //   await sleep(1000);
-    // }
+    full_vacancies.push(...(await getFullVacanciesFromURLs(chunk)));
   }
+  console.log("");
+
   return full_vacancies;
 };
 
@@ -108,12 +118,31 @@ export const branchVacanciesFromDeepCluster = async (
       const formatted_clusters = formatClusters(clusters);
       const urls: any[] = [];
       if (formatted_clusters.metro !== undefined) {
-        formatted_clusters.metro.items.forEach((item) => {
+        formatted_clusters.metro.items.forEach(async (item) => {
           urls.push({
             count: item.count,
             url: item.url,
             name: item.metro_line?.area.name + " " + item.name,
           });
+          // if (item.count > 2000) {
+          //   const branched_metro_cluster = await branchMetroCluster(item);
+          //   console.log("LOL:", branched_metro_cluster.length)
+          //   branched_metro_cluster.forEach((station) => {
+          //     urls.push({
+          //       count: station.count,
+          //       url: station.url,
+          //       name: station.name,
+          //     });
+          //   });
+          // } else {
+          //   console.log("count:", item.count)
+
+          //   urls.push({
+          //     count: item.count,
+          //     url: item.url,
+          //     name: item.metro_line?.area.name + " " + item.name,
+          //   });
+          // }
         });
       }
       return urls;
@@ -121,6 +150,17 @@ export const branchVacanciesFromDeepCluster = async (
   );
 
   return parse_items;
+};
+
+const branchMetroCluster = async (item: API.MetroClusterItem) => {
+  const stations = await fetch(item.url, {
+    headers: hh_headers,
+  })
+    .then((res) => res.json() as Promise<API.Response>)
+    .then((res) => formatClusters(res.clusters))
+    .then((clusters) => clusters.metro?.items ?? []);
+
+  return stations;
 };
 
 export const getVacanciesFromURLs = async (

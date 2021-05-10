@@ -17,6 +17,7 @@ export const search = async (query: API.Query) => {
   // console.log(query_url);
 
   const response: API.Response = await getVacanciesInfo(query_url);
+  console.log("всего по данному запросу найдено:", response.found, "вакансий");
 
   const clusters: API.FormattedClusters = formatClusters(response.clusters);
   saveToFile(clusters, "data", "clusters.json");
@@ -24,6 +25,11 @@ export const search = async (query: API.Query) => {
   console.log("парсинг сокращённых вакансий");
 
   const urls = await getURLsFromClusters(clusters);
+  console.log(
+    "количество запросов для получения сокращённых вакансий:",
+    urls.length
+  );
+
   const vacancies: API.Vacancy[] = await getVacancies(urls);
 
   console.log(vacancies.length);

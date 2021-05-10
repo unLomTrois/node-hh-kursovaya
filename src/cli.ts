@@ -41,7 +41,6 @@ cli
       // order_by: "salary_desc",
       // no_magic: false,
       clusters: true,
-      // only_with_salary: false,
       // specialization: "1",
       // industry: "7",
     };
