@@ -19,8 +19,9 @@ export const analyze = (
 
   // analyzeClusters(clusters)
 
-  const rated_skills = rateKeySkills(vacancies);
-  saveToFile(rated_skills, "data", "rated_skills.json");
+  const analyzed_vacancies = analyzeVacancies(vacancies);
+
+  saveToFile(analyzed_vacancies, "data", "rated_skills.json");
   // обработка кластеров
 
   // всего вакансий
@@ -39,9 +40,34 @@ export const analyze = (
       ),
     },
     analyzed_vacancies: {
+      has_test: {
+        value: analyzed_vacancies.has_test,
+        ratio: analyzed_vacancies.has_test / found,
+      },
+      test_required: {
+        value: analyzed_vacancies.test_required,
+        ratio: analyzed_vacancies.test_required / found,
+        has_test_ratio:
+          analyzed_vacancies.test_required / analyzed_vacancies.has_test,
+      },
+      accept_incomplete_resume: {
+        value: analyzed_vacancies.accept_incomplete_resume,
+        ratio: analyzed_vacancies.accept_incomplete_resume / found,
+      },
+      response_letter_required: {
+        value: analyzed_vacancies.response_letter_required,
+        ratio: analyzed_vacancies.response_letter_required / found,
+      },
       key_skills: {
-        top_ten: rated_skills.slice(0, 10),
-        full_list: rated_skills,
+        vacancies_with_keyskills: {
+          value:
+            analyzed_vacancies.rated_skills.vacancies_with_keyskills.length,
+          ratio:
+            analyzed_vacancies.rated_skills.vacancies_with_keyskills.length /
+            found,
+        },
+        top_ten: analyzed_vacancies.rated_skills.key_skills.slice(0, 10),
+        full_list: analyzed_vacancies.rated_skills.key_skills,
       },
     },
   };
@@ -171,7 +197,13 @@ const analyzeExperienceCluster = (
 };
 
 const rateKeySkills = (prepared_vacancies: API.PreparedVacancy[]) => {
-  const key_skills = prepared_vacancies.flatMap((vac) =>
+  const vacancies_with_keyskills = prepared_vacancies.filter(
+    (vac) => vac.key_skills != undefined
+  );
+
+  console.log("vacancies_with_keyskills:", vacancies_with_keyskills.length);
+
+  const key_skills = vacancies_with_keyskills.flatMap((vac) =>
     vac.key_skills?.map((key_list) => key_list.name)
   );
 
@@ -179,16 +211,6 @@ const rateKeySkills = (prepared_vacancies: API.PreparedVacancy[]) => {
   key_skills.forEach((skill) => {
     result[skill] = (result[skill] || 0) + 1;
   });
-
-  console.log(
-    prepared_vacancies.length,
-    key_skills.length,
-    key_skills.length / prepared_vacancies.length
-  );
-
-  // return result
-
-  // const unique_key_skills = Array.from(new Set(key_skills));
 
   const rated_skills = Object.entries<number>(result)
     .map((arr) => {
@@ -203,5 +225,42 @@ const rateKeySkills = (prepared_vacancies: API.PreparedVacancy[]) => {
       skill_1.count < skill_2.count ? 1 : skill_2.count < skill_1.count ? -1 : 0
     );
 
-  return rated_skills;
+  return {
+    vacancies_with_keyskills,
+    key_skills: rated_skills,
+  };
+};
+
+const analyzeVacancies = (prepared_vacancies: API.PreparedVacancy[]) => {
+  console.log("prepared:", prepared_vacancies.length);
+
+  const has_test: number = prepared_vacancies.reduce(
+    (acc, vac) => (acc += vac.has_test ? 1 : 0),
+    0
+  );
+
+  const test_required: number = prepared_vacancies.reduce(
+    (acc, vac) => (acc += vac.test?.required ? 1 : 0),
+    0
+  );
+
+  const response_letter_required: number = prepared_vacancies.reduce(
+    (acc, vac) => (acc += vac.response_letter_required ? 1 : 0),
+    0
+  );
+
+  const accept_incomplete_resume: number = prepared_vacancies.reduce(
+    (acc, vac) => (acc += vac.accept_incomplete_resumes ? 1 : 0),
+    0
+  );
+
+  const rated_skills = rateKeySkills(prepared_vacancies);
+
+  return {
+    rated_skills,
+    has_test,
+    test_required,
+    response_letter_required,
+    accept_incomplete_resume,
+  };
 };
