@@ -65,9 +65,9 @@ export const getFullVacancies = async (
   return full_vacancies;
 };
 
-export const getURLsFromClusters = async (clusters: API.FormattedClusters) => {
+export const getURLsFromClusters = async (clusters: API.FormattedClusters) => {  
   const [small_area_clusters, big_area_clusters] = partition(
-    clusters.area.items,
+    clusters?.area?.items ?? clusters.metro?.items,
     (cluster) => cluster.count <= 2000
   );
 

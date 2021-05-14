@@ -1,5 +1,5 @@
 import { API } from "../types/api/module.js";
-import { buildQueryURL, formatClusters, saveToFile } from "../utils";
+import { buildQueryURL, formatClusters, paginateLink, saveToFile } from "../utils";
 import {
   getFullVacancies,
   getURLsFromClusters,
@@ -17,12 +17,22 @@ export const search = async (query: API.Query) => {
   const response: API.Response = await getVacanciesInfo(query_url);
   console.log("всего по данному запросу найдено:", response.found, "вакансий");
 
-  const clusters: API.FormattedClusters = formatClusters(response.clusters);
+  const clusters: API.FormattedClusters = formatClusters(response.clusters, response.found);
   saveToFile(clusters, "data", "clusters.json");
 
-  console.log("парсинг сокращённых вакансий");
 
-  const urls = await getURLsFromClusters(clusters);
+  const getURLs = async (url: string, found: number, clusters: API.FormattedClusters) => {
+    if (found <= 2000) {
+      const pages: number = Math.ceil(found / 100);
+
+      return paginateLink(url, pages)
+    }
+    console.log("парсинг сокращённых вакансий");
+    return await getURLsFromClusters(clusters);
+  }
+
+  let urls = await getURLs(query_url, response.found, clusters);
+
   console.log(
     "количество запросов для получения сокращённых вакансий:",
     urls.length
@@ -62,13 +72,11 @@ export const prepare = async (full_vacancies: API.FullVacancy[]) => {
   const prepared_vacancies: API.PreparedVacancy[] = full_vacancies.map(
     (vac: API.FullVacancy) => {
       return {
-        id: vac.id,
         key_skills: vac.key_skills,
-        salary: vac.salary,
         response_letter_required: vac.response_letter_required,
         has_test: vac.has_test,
         test: vac.test,
-        contacts: vac.contacts,
+        salary: vac.salary,
         allow_messages: vac.allow_messages,
         accept_incomplete_resumes: vac.accept_incomplete_resumes,
         accept_temporary: vac.accept_temporary,

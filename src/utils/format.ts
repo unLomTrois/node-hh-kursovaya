@@ -7,8 +7,10 @@ export const buildQueryURL = (raw_query: API.Query) => {
 };
 
 export const formatClusters = (
-  clusters: API.Cluster[]
-): API.FormattedClusters => convertArrayToObject(clusters, "id");
+  clusters: API.Cluster[], found?: number
+): API.FormattedClusters => {
+  return { ...convertArrayToObject(clusters, "id"), found }
+};
 
 const queryToString = (query: API.Query): string => {
   const query_list: string[] = [];
@@ -35,7 +37,7 @@ const convertArrayToObject = (array: any[], key: string) => {
 export const paginateLink = (link: string, pages: number): string[] => {
   const url = new URL(link);
 
-  url.searchParams.set("page", "1");
+  url.searchParams.set("page", "0");
 
   const prepared_url = url
     .toString()

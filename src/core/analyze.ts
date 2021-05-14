@@ -1,81 +1,47 @@
+import { resolve } from "node:path";
 import { API } from "../types/api/module";
 import { saveToFile } from "../utils";
-
-export const analyzeClusters = (clusters: API.FormattedClusters) => {
-  saveToFile(clusters.area, "./data/clusters", "area.json");
-  saveToFile(clusters.salary, "./data/clusters", "salary.json");
-  saveToFile(clusters.sub_industry, "./data/clusters", "sub_industry.json");
-  // saveToFile(clusters.industry, "./data/clusters", "industry.json");
-  saveToFile(clusters.employment, "./data/clusters", "employment.json");
-  saveToFile(clusters.experience, "./data/clusters", "experience.json");
-  saveToFile(clusters.schedule, "./data/clusters", "schedule.json");
-};
 
 export const analyze = (
   vacancies: API.PreparedVacancy[],
   clusters: API.FormattedClusters
 ) => {
-  // обработка вакансий
-
-  // analyzeClusters(clusters)
-
-  const analyzed_vacancies = analyzeVacancies(vacancies);
-
-  saveToFile(analyzed_vacancies, "data", "rated_skills.json");
-  // обработка кластеров
 
   // всего вакансий
-  const found: number = vacancies.length;
+  const found: number = clusters?.found ?? vacancies.length;
+
+  // обработка вакансий
+  const analyzed_vacancies = analyzeVacancies(vacancies, found);
+  saveToFile(analyzed_vacancies, "data", "analyzed_vacancies.json");
+
+  // обработка кластеров
+  const analyzed_clusters = analyzeClusters(clusters, found)
+  saveToFile(analyzed_clusters, "data", "analyzed_clusters.json");
 
   const analyzed_data = {
-    analyzed_clusters: {
-      found: found,
-      salary_info: analyzeSalaryCluster(clusters.salary, found),
-      experience_info: analyzeExperienceCluster(clusters.experience, found),
-      employment_info: analyzeSimpleCluster(clusters.employment, found),
-      schedule_info: analyzeSimpleCluster(clusters.schedule, found),
-      industry_info: analyzeSimpleCluster(
-        clusters?.industry ?? clusters.sub_industry,
-        found
-      ),
-    },
-    analyzed_vacancies: {
-      has_test: {
-        value: analyzed_vacancies.has_test,
-        ratio: analyzed_vacancies.has_test / found,
-      },
-      test_required: {
-        value: analyzed_vacancies.test_required,
-        ratio: analyzed_vacancies.test_required / found,
-        has_test_ratio:
-          analyzed_vacancies.test_required / analyzed_vacancies.has_test,
-      },
-      accept_incomplete_resume: {
-        value: analyzed_vacancies.accept_incomplete_resume,
-        ratio: analyzed_vacancies.accept_incomplete_resume / found,
-      },
-      response_letter_required: {
-        value: analyzed_vacancies.response_letter_required,
-        ratio: analyzed_vacancies.response_letter_required / found,
-      },
-      key_skills: {
-        vacancies_with_keyskills: {
-          value:
-            analyzed_vacancies.rated_skills.vacancies_with_keyskills.length,
-          ratio:
-            analyzed_vacancies.rated_skills.vacancies_with_keyskills.length /
-            found,
-        },
-        top_ten: analyzed_vacancies.rated_skills.key_skills.slice(0, 10),
-        full_list: analyzed_vacancies.rated_skills.key_skills,
-      },
-    },
+    vacancy_count: found,
+    analyzed_clusters,
+    analyzed_vacancies
   };
 
   saveToFile(analyzed_data, "data", "analyzed_data.json");
+  console.log("Результаты анализа доступны в файле:", resolve(process.cwd(), "data", "analyzed_data.json"))
 
   return analyzed_data;
 };
+
+const analyzeClusters = (clusters: API.FormattedClusters, found: number) => {
+  return {
+    salary_info: analyzeSalaryCluster(clusters.salary, found),
+    experience_info: analyzeExperienceCluster(clusters.experience, found),
+    employment_info: analyzeSimpleCluster(clusters.employment, found),
+    schedule_info: analyzeSimpleCluster(clusters.schedule, found),
+    industry_info: analyzeSimpleCluster(
+      clusters?.industry ?? clusters.sub_industry,
+      found
+    ),
+  }
+}
 
 const analyzeSimpleCluster = (simple_cluster: API.Cluster, found: number) => {
   const groups: any[] = simple_cluster.items.map((item) => {
@@ -212,15 +178,20 @@ const rateKeySkills = (prepared_vacancies: API.PreparedVacancy[]) => {
     result[skill] = (result[skill] || 0) + 1;
   });
 
-  const rated_skills = Object.entries<number>(result)
+  const result_ents = Object.entries<number>(result);
+
+  console.log("уникальные навыки:", result_ents.length)
+
+  const rated_skills = result_ents
     .map((arr) => {
       return {
         name: arr[0],
         count: arr[1],
-        ratio: parseFloat((arr[1] / prepared_vacancies.length).toFixed(3)),
+        ratio_to_vacancies: parseFloat((arr[1] / vacancies_with_keyskills.length).toFixed(3)),
+        ratio_to_key_skills: parseFloat((arr[1] / key_skills.length).toFixed(3)),
       };
     })
-    .filter((skill) => skill.ratio >= 0.01)
+    .filter((skill) => skill.ratio_to_vacancies >= 0.01)
     .sort((skill_1, skill_2) =>
       skill_1.count < skill_2.count ? 1 : skill_2.count < skill_1.count ? -1 : 0
     );
@@ -228,11 +199,20 @@ const rateKeySkills = (prepared_vacancies: API.PreparedVacancy[]) => {
   return {
     vacancies_with_keyskills,
     key_skills: rated_skills,
+    key_skills_count: key_skills.length
   };
 };
 
-const analyzeVacancies = (prepared_vacancies: API.PreparedVacancy[]) => {
+const analyzeVacancies = (prepared_vacancies: API.PreparedVacancy[], found: number) => {
   console.log("prepared:", prepared_vacancies.length);
+
+  const vac20k = prepared_vacancies.
+    filter(vac => vac?.salary != undefined).
+    filter(vac => vac.salary?.from != undefined)
+    .map(vac => vac.salary?.from != undefined ? vac.salary?.from : 0)
+    .sort((a, b) => (a - b))
+
+  saveToFile(vac20k, "data", "salaries.json")
 
   const has_test: number = prepared_vacancies.reduce(
     (acc, vac) => (acc += vac.has_test ? 1 : 0),
@@ -254,13 +234,47 @@ const analyzeVacancies = (prepared_vacancies: API.PreparedVacancy[]) => {
     0
   );
 
+  const accept_temporary: number = prepared_vacancies.reduce(
+    (acc, vac) => (acc += vac.accept_temporary ? 1 : 0),
+    0
+  );
+
   const rated_skills = rateKeySkills(prepared_vacancies);
 
   return {
-    rated_skills,
-    has_test,
-    test_required,
-    response_letter_required,
-    accept_incomplete_resume,
-  };
+    has_test: {
+      value: has_test,
+      ratio: has_test / found,
+    },
+    test_required: {
+      value: test_required,
+      ratio: test_required / found,
+      has_test_ratio:
+        test_required / has_test,
+    },
+    accept_incomplete_resume: {
+      value: accept_incomplete_resume,
+      ratio: accept_incomplete_resume / found,
+    },
+    accept_temporary: {
+      value: accept_temporary,
+      ratio: accept_temporary / found,
+    },
+    response_letter_required: {
+      value: response_letter_required,
+      ratio: response_letter_required / found,
+    },
+    key_skills: {
+      key_skills_count: rated_skills.key_skills_count,
+      vacancies_with_keyskills: {
+        value:
+          rated_skills.vacancies_with_keyskills.length,
+        ratio:
+          rated_skills.vacancies_with_keyskills.length /
+          found,
+      },
+      top_ten: rated_skills.key_skills.slice(0, 10),
+      full_list: rated_skills.key_skills,
+    },
+  }
 };

@@ -222,25 +222,23 @@ export namespace API {
   }
 
   export interface PreparedVacancy {
-    id: string;
     key_skills: KeySkill[];
+    has_test: boolean;
+    test?: {
+      required: boolean;
+    };
     salary?: {
       from?: number;
       to?: number;
       gross?: boolean;
     };
     response_letter_required: boolean;
-    has_test: boolean;
-    test?: {
-      required: boolean;
-    };
-    contacts?: any;
-    allow_messages: boolean;
     accept_incomplete_resumes: boolean;
     accept_temporary: boolean;
   }
 
   export interface FormattedClusters {
+    found?: number;
     metro?: MetroCluster;
     area: Cluster;
     salary: Cluster;
@@ -261,7 +259,7 @@ export namespace API {
   /**
    * Минимальный элемент парсинга, предоставляет информацию о ссылке и количестве вакансий по ней
    */
-   export interface ParseItem {
+  export interface ParseItem {
     count: number;
     url: string;
     name: string;
